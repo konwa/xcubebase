@@ -28,7 +28,7 @@ static GMainLoop *loop;
 bool checkConfguared(const char *packagename) {
     FILE *file = fopen(confpath, "r");
     if (file == NULL) {
-        LOGE("file open failed %s",packagename);
+        LOGE("file open failed %s", packagename);
         return false;
     }
     char *packages = readfile(confpath);
@@ -51,7 +51,7 @@ bool checkConfguared(const char *packagename) {
 char *readfile(const char *filepath) {
     FILE *file = fopen(filepath, "r");
     if (file == NULL) {
-        LOGE("file open failed : %s " ,filepath);
+        LOGE("file open failed : %s ", filepath);
         return NULL;
     }
 
@@ -75,27 +75,56 @@ char *readfile(const char *filepath) {
 int hookFunc(const char *scriptpath) {
     LOGD ("[*] gumjsHook()");
     gum_init_embedded();
+    LOGD ("[*] gumjsHook()1");
     backend = gum_script_backend_obtain_qjs();
+    LOGD ("[*] gumjsHook()2");
     char *js = readfile(scriptpath);
     if (!js) {
         return 1;
     }
+    LOGD ("[*] gumjsHook()3");
 
-    script = gum_script_backend_create_sync(backend, "example", js, cancellable, &error);
+    script = gum_script_backend_create_sync(backend, "example", js, NULL, cancellable, &error);
+//    script = gum_script_backend_create_sync (backend, "example",
+//                                             "Interceptor.attach(Module.getExportByName(null, 'open'), {\n"
+//                                             "  onEnter(args) {\n"
+//                                             "    console.log(`[*] open(\"${args[0].readUtf8String()}\")`);\n"
+//                                             "  }\n"
+//                                             "});\n"
+//                                             "Interceptor.attach(Module.getExportByName(null, 'close'), {\n"
+//                                             "  onEnter(args) {\n"
+//                                             "    console.log(`[*] close(${args[0].toInt32()})`);\n"
+//                                             "  }\n"
+//                                             "});",
+//                                             NULL, cancellable, &error);
+    LOGD ("[*] gumjsHook()4");
     g_assert (error == NULL);
+    LOGD ("[*] gumjsHook()5");
     gum_script_set_message_handler(script, on_message, NULL, NULL);
+    LOGD ("[*] gumjsHook()6");
     gum_script_load_sync(script, cancellable);
+    LOGD ("[*] gumjsHook()7");
     //下面这段代码会执行一下已有的事件
     context = g_main_context_get_thread_default();
-    while (g_main_context_pending(context))
+    LOGD ("[*] gumjsHook()8");
+    LOGD ("%s", context);
+    while (g_main_context_pending(context)){
+        LOGD ("[*] gumjsHook() 8 in loop");
+
         g_main_context_iteration(context, FALSE);
+    }
     //到这里说明脚本已经加载完成，通知主线程继续执行
+    LOGD ("[*] gumjsHook()9");
     pthread_mutex_lock(&mtx);
+    LOGD ("[*] gumjsHook()10");
     pthread_cond_signal(&cond);
+    LOGD ("[*] gumjsHook()11");
     pthread_mutex_unlock(&mtx);
+    LOGD ("[*] gumjsHook()12");
 
     loop = g_main_loop_new(g_main_context_get_thread_default(), FALSE);
     g_main_loop_run(loop);//block here
+    LOGD ("[*] gumjsHook()10");
 
     return 0;
 }
@@ -120,9 +149,9 @@ int gumjsHook(const char *scriptpath) {
     return result;
 }
 
+
 static void
-on_message(GumScript *script, const gchar *message,
-           GBytes *data, gpointer user_data) {
+on_message(const gchar *message, GBytes *data, gpointer user_data) {
     JsonParser *parser;
     JsonObject *root;
     const gchar *type;
@@ -142,4 +171,29 @@ on_message(GumScript *script, const gchar *message,
 
     g_object_unref(parser);
 }
+
+//static void
+//on_message(GumScript *script, const gchar *message,
+//           GBytes *data, gpointer user_data) {
+//    JsonParser *parser;
+//    JsonObject *root;
+//    const gchar *type;
+//
+//    parser = json_parser_new();
+//    LOGD ("[*] log data : %s ", data);
+//    LOGD ("[*] log msg : %s ", message);
+//    json_parser_load_from_data(parser, message, -1, NULL);
+//    root = json_node_get_object(json_parser_get_root(parser));
+//
+//    type = json_object_get_string_member(root, "type");
+//    if (strcmp(type, "log") == 0) {
+//        const gchar *log_message;
+//        log_message = json_object_get_string_member(root, "payload");
+//        LOGD ("[*] log : %s ", log_message);
+//    } else {
+//        LOGD ("[*] %s ", message);
+//    }
+//
+//    g_object_unref(parser);
+//}
 

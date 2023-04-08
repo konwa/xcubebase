@@ -20,7 +20,7 @@
 
 
 //https://stackoverflow.com/questions/19355783/getting-os-version-with-ndk-in-c
-static void on_message(GumScript *script, const gchar *message, GBytes *data, gpointer user_data);
+static void on_message(const gchar *script, GBytes *message, gpointer data);
 
 int gumjsHook(const char *scriptpath);
 
