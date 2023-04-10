@@ -75,56 +75,34 @@ char *readfile(const char *filepath) {
 int hookFunc(const char *scriptpath) {
     LOGD ("[*] gumjsHook()");
     gum_init_embedded();
-    LOGD ("[*] gumjsHook()1");
     backend = gum_script_backend_obtain_qjs();
-    LOGD ("[*] gumjsHook()2");
-    char *js = readfile(scriptpath);
+    char *js1 = readfile(scriptpath);
+    char *sekiro_js = readfile("/data/local/tmp/sekiro.js");
+    char *js = (char *) malloc(strlen(js1) + strlen(sekiro_js));
+    strcpy(js, sekiro_js);
+    strcat(js, js1);
+    printf("%s\n", js);
     if (!js) {
         return 1;
     }
-    LOGD ("[*] gumjsHook()3");
 
     script = gum_script_backend_create_sync(backend, "example", js, NULL, cancellable, &error);
-//    script = gum_script_backend_create_sync (backend, "example",
-//                                             "Interceptor.attach(Module.getExportByName(null, 'open'), {\n"
-//                                             "  onEnter(args) {\n"
-//                                             "    console.log(`[*] open(\"${args[0].readUtf8String()}\")`);\n"
-//                                             "  }\n"
-//                                             "});\n"
-//                                             "Interceptor.attach(Module.getExportByName(null, 'close'), {\n"
-//                                             "  onEnter(args) {\n"
-//                                             "    console.log(`[*] close(${args[0].toInt32()})`);\n"
-//                                             "  }\n"
-//                                             "});",
-//                                             NULL, cancellable, &error);
-    LOGD ("[*] gumjsHook()4");
     g_assert (error == NULL);
-    LOGD ("[*] gumjsHook()5");
     gum_script_set_message_handler(script, on_message, NULL, NULL);
-    LOGD ("[*] gumjsHook()6");
     gum_script_load_sync(script, cancellable);
-    LOGD ("[*] gumjsHook()7");
     //下面这段代码会执行一下已有的事件
     context = g_main_context_get_thread_default();
-    LOGD ("[*] gumjsHook()8");
-    LOGD ("%s", context);
     while (g_main_context_pending(context)){
-        LOGD ("[*] gumjsHook() 8 in loop");
 
         g_main_context_iteration(context, FALSE);
     }
     //到这里说明脚本已经加载完成，通知主线程继续执行
-    LOGD ("[*] gumjsHook()9");
     pthread_mutex_lock(&mtx);
-    LOGD ("[*] gumjsHook()10");
     pthread_cond_signal(&cond);
-    LOGD ("[*] gumjsHook()11");
     pthread_mutex_unlock(&mtx);
-    LOGD ("[*] gumjsHook()12");
 
     loop = g_main_loop_new(g_main_context_get_thread_default(), FALSE);
     g_main_loop_run(loop);//block here
-    LOGD ("[*] gumjsHook()10");
 
     return 0;
 }
