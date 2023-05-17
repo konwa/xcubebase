@@ -65,10 +65,12 @@ public class XcubeBase implements IXposedHookLoadPackage {
                     File toPath = base.getDir("libs", Context.MODE_PRIVATE);
                     String libpath = "/data/local/tmp/xcube/";
                     String ABI = android.os.Process.is64Bit() ? "arm64-v8a" : "armeabi-v7a";
+                    Log.d(TAG, "use ABI:" + ABI);
                     //System.loadlibrary使用的classloader是当前classloader，而param.args[0]是目标应用的classloader，二者不同
                     Log.d(TAG, "attach beforeHookedMethod toPath:" + toPath);
                     LoadLibraryUtil.loadSoFile(this.getClass().getClassLoader(), libpath + ABI, toPath);
                     System.loadLibrary("xcubebase");
+//                    System.loadLibrary("sgmainso-6.6.17");
                     Log.d(TAG, "script path :" + script);
                     gumjsHook(script);
                     hooked = true;
@@ -178,6 +180,7 @@ public class XcubeBase implements IXposedHookLoadPackage {
                 try {
                     V25.install(classLoader, folder);
                 } catch (Throwable throwable) {
+                    throwable.printStackTrace();
                     try {
                         V23.install(classLoader, folder);
                     } catch (Throwable throwable1) {
@@ -252,12 +255,13 @@ public class XcubeBase implements IXposedHookLoadPackage {
 
                 List<File> libDirs = (List<File>) nativeLibraryDirectories.get(dexPathList);
                 //去重
-                if (libDirs == null) {
+                if (libDirs == null || libDirs.isEmpty()) {
                     libDirs = new ArrayList<>(2);
                 }
                 final Iterator<File> libDirIt = libDirs.iterator();
                 while (libDirIt.hasNext()) {
                     final File libDir = libDirIt.next();
+
                     if (folder.equals(libDir) || folder.equals(lastSoDir)) {
                         libDirIt.remove();
                         Log.d(TAG, "dq libDirIt.remove()" + folder.getAbsolutePath());
@@ -334,6 +338,7 @@ public class XcubeBase implements IXposedHookLoadPackage {
                 copyFile(fromPath, dirs.getAbsolutePath());
                 installNativeLibraryPath(classLoader, dirs);
             } catch (Throwable throwable) {
+                throwable.printStackTrace();
                 Log.e("loadSoFile", "loadSoFile error " + throwable.getMessage());
             }
         }

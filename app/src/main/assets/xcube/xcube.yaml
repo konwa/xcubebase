@@ -3,8 +3,5 @@ active: true
 
 # 要hook的app包名和要使用的js脚本
 packageConfigList:
- com.tencent.mtt: /data/local/tmp/myscript.js
- org.xtgo.xcube.forxcubetest: /data/local/tmp/myscript.js
- com.tencent.zgqyz: /data/local/tmp/myscript.js
- org.xtgo.xcube.verification: /data/local/tmp/myscript.js
+ com.taobao.taobao: /data/local/tmp/call_so.js
  
